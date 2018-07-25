@@ -39,6 +39,13 @@
       <artifactId>kafka-avro-serializer</artifactId>
       <version>${confluent.version}</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/io.confluent.kafka/connect-assemblies -->
+    <dependency>
+      <groupId>io.confluent</groupId>
+      <artifactId>kafka-schema-registry-client</artifactId>
+      <version>4.1.1</version>
+    </dependency>
+
     <dependency>
       <groupId>org.apache.avro</groupId>
       <artifactId>avro</artifactId>
@@ -69,11 +76,11 @@
           <artifactId>kafka_2.10</artifactId>
           <version>0.8.2.1</version>
         </dependency>-->
-        <dependency>
+       <!-- <dependency>
           <groupId>org.scala-lang</groupId>
           <artifactId>scala-library</artifactId>
           <version>2.11.11</version>
-        </dependency>
+        </dependency>-->
   </dependencies>
 
   <repositories>
@@ -118,6 +125,23 @@
         <artifactId>maven-dependency-plugin</artifactId>
         <version>2.10</version>
       </plugin>
+      <plugin>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>3.4.2</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <scalaVersion>2.11.11</scalaVersion>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
 </project>
