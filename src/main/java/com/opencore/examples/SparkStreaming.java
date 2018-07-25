@@ -1,19 +1,20 @@
 package com.opencore.examples;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import io.confluent.kafka.serializers.KafkaAvroDecoder;
-import kafka.serializer.StringDecoder;
+
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.streaming.Durations;
+import org.apache.spark.streaming.api.java.JavaInputDStream;
 import org.apache.spark.streaming.api.java.JavaPairInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.kafka.KafkaUtils;
+import org.apache.spark.streaming.kafka010.ConsumerStrategies;
+import org.apache.spark.streaming.kafka010.KafkaUtils;
+import org.apache.spark.streaming.kafka010.LocationStrategies;
 import scala.Tuple2;
 
 public class SparkStreaming {
@@ -26,39 +27,29 @@ public class SparkStreaming {
     JavaSparkContext sc = new JavaSparkContext(conf);
     JavaStreamingContext ssc = new JavaStreamingContext(sc, Durations.seconds(10));
 
-    processStream(ssc, sc);
+    Map<String, Object> kafkaParams = new HashMap<>();
+    kafkaParams.put("bootstrap.servers", "localhost:9092");
+    kafkaParams.put("key.deserializer", StringDeserializer.class);
+    kafkaParams.put("value.deserializer", StringDeserializer.class);
+    kafkaParams.put("group.id", "use_a_separate_group_id_for_each_stream");
+    kafkaParams.put("auto.offset.reset", "latest");
+    kafkaParams.put("enable.auto.commit", false);
 
-    ssc.start();
-    ssc.awaitTermination();
+    Collection<String> topics = Arrays.asList("topicA", "topicB");
+
+    JavaInputDStream<ConsumerRecord<String, String>> stream =
+            KafkaUtils.createDirectStream(
+                    ssc,
+                    LocationStrategies.PreferConsistent(),
+                    ConsumerStrategies.<String, String>Subscribe(topics, kafkaParams)
+            );
+
+
+    stream.mapToPair(record -> new Tuple2<>(record.key(), record.value()));
+
+
   }
 
-  private static void processStream(JavaStreamingContext ssc, JavaSparkContext sc) {
-    System.out.println("--> Processing stream");
 
-    Map<String, String> props = new HashMap<>();
-    props.put("bootstrap.servers", "localhost:9092");
-    props.put("schema.registry.url", "http://localhost:8081");
-    props.put("group.id", "spark");
-    props.put("specific.avro.reader", "true");
-
-    props.put("value.deserializer", "io.confluent.kafka.serializers.KafkaAvroDeserializer");
-    props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-
-    Set<String> topicsSet = new HashSet<>(Collections.singletonList("test"));
-
-    JavaPairInputDStream<String, Object> stream = KafkaUtils.createDirectStream(ssc, String.class, Object.class,
-      StringDecoder.class, KafkaAvroDecoder.class, props, topicsSet);
-
-    stream.foreachRDD(rdd -> {
-      rdd.foreachPartition(iterator -> {
-          while (iterator.hasNext()) {
-            Tuple2<String, Object> next = iterator.next();
-            Model model = (Model) next._2();
-            System.out.println(next._1() + " --> " + model);
-          }
-        }
-      );
-    });
-  }
 }
 
