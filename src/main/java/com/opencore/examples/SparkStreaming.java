@@ -12,30 +12,30 @@ import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaInputDStream;
 import org.apache.spark.streaming.api.java.JavaPairInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.kafka010.ConsumerStrategies;
-import org.apache.spark.streaming.kafka010.KafkaUtils;
-import org.apache.spark.streaming.kafka010.LocationStrategies;
+import org.apache.spark.streaming.kafka010.*;
 import scala.Tuple2;
 
 public class SparkStreaming {
 
   public static void main(String... args) {
+
+
     SparkConf conf = new SparkConf();
     conf.setMaster("local[2]");
-    conf.setAppName("Spark Streaming Test Java");
+    conf.setAppName("Spark Streaming test.Test Java");
 
     JavaSparkContext sc = new JavaSparkContext(conf);
+   // sc.setLogLevel("DEBUG");
     JavaStreamingContext ssc = new JavaStreamingContext(sc, Durations.seconds(10));
 
     Map<String, Object> kafkaParams = new HashMap<>();
     kafkaParams.put("bootstrap.servers", "localhost:9092");
     kafkaParams.put("key.deserializer", StringDeserializer.class);
     kafkaParams.put("value.deserializer", StringDeserializer.class);
-    kafkaParams.put("group.id", "use_a_separate_group_id_for_each_stream");
-    kafkaParams.put("auto.offset.reset", "latest");
-    kafkaParams.put("enable.auto.commit", false);
+    kafkaParams.put("group.id", "use_a_separate_group_id_for_eacsh_sstream");
+    kafkaParams.put("auto.offset.reset", "earliest");
 
-    Collection<String> topics = Arrays.asList("coyote-test-json");
+    Collection<String> topics = Arrays.asList("backblaze_smart");
 
     JavaInputDStream<ConsumerRecord<String, String>> stream =
             KafkaUtils.createDirectStream(
@@ -45,7 +45,16 @@ public class SparkStreaming {
             );
 
 
-    stream.mapToPair(record -> new Tuple2<>(record.key(), record.value()));
+    stream.foreachRDD(rdd -> {
+
+      OffsetRange[] offsetRanges = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
+
+    /*  for (OffsetRange o : offsetRanges){
+      System.out.println(o.  " ${o.partition} offsets: ${o.fromOffset} to ${o.untilOffset}")
+      }*/
+
+
+    });
 
 
   }
