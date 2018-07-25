@@ -35,7 +35,7 @@ public class SparkStreaming {
     kafkaParams.put("auto.offset.reset", "latest");
     kafkaParams.put("enable.auto.commit", false);
 
-    Collection<String> topics = Arrays.asList("topicA", "topicB");
+    Collection<String> topics = Arrays.asList("coyote-test-json");
 
     JavaInputDStream<ConsumerRecord<String, String>> stream =
             KafkaUtils.createDirectStream(
