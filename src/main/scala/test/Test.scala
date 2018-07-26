@@ -1,63 +1,106 @@
 package test
 
-import org.apache.spark.streaming.kafka010._
-import org.apache.kafka.common.TopicPartition
-import org.apache.spark.SparkConf
+import io.confluent.kafka.schemaregistry.client.rest.RestService
+import io.confluent.kafka.serializers.KafkaAvroDeserializer
+import org.apache.avro.Schema
+import org.apache.spark
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.execution.streaming.FileStreamSource.Timestamp
+
+import collection.JavaConverters._
+
 
 
 object Test {
 
+  case class KafkaMessage(key: Array[Byte], value: Array[Byte],topic: String, partition: String, offset: Long, timestamp: Timestamp)
 
   def main(args: Array[String]): Unit = {
 
-    import org.apache.spark.SparkContext
-    import org.apache.spark.streaming._
+    val schemaRegistryURL = "http://127.0.0.1:8081"
+    val topicName = "sea_vessel_position_reports"
+    val subjectValueName = topicName + "-value"
+
+    //create RestService object
+
+    val restService = new RestService(schemaRegistryURL)
+    //.getLatestVersion returns io.confluent.kafka.schemaregistry.client.rest.entities.Schema object.
+    val valueRestResponseSchema = restService.getLatestVersion(subjectValueName)
 
 
-    var conf = new SparkConf().setAppName("AirportsByLatitude").setMaster("local[2]")
-    var context = new SparkContext(conf)
+    //Use Avro parsing classes to get Avro Schema
+    val parser = new Schema.Parser
+    val topicValueAvroSchema: Schema = parser.parse(valueRestResponseSchema.getSchema)
+    println(topicValueAvroSchema.toString(true))
 
-    val sc = SparkContext.getOrCreate
-    val ssc = new StreamingContext(sc, Seconds(100))
+    //key schema is typically just string but you can do the same process for the key as the value
+    val keySchemaString = "\"string\""
+    val keySchema = parser.parse(keySchemaString)
+
+    //Create a map with the Schema registry url.
+    //This is the only Required configuration for Confluent's KafkaAvroDeserializer.
+    val props = Map("schema.registry.url" -> schemaRegistryURL)
+
+    //Declare SerDe vars before using Spark structured streaming map. Avoids non serializable class exception.
+    var keyDeserializer: KafkaAvroDeserializer = null
+    var valueDeserializer: KafkaAvroDeserializer = null
+
+    val sql = SparkSession.builder().master("local").getOrCreate()
+
+    import sql.implicits._
+
+    //Create structured streaming DF to read from the topic.
+    val rawTopicMessageDF = sql.readStream
+                               .format("kafka")
+                               .option("kafka.bootstrap.servers", "localhost:9092")
+                               .option("subscribe", topicName)
+                               .option("startingOffsets", "earliest")
+                               //.option("maxOffsetsPerTrigger", 20)  //remove for prod
+                               .load()
+                               .as[KafkaMessage]
+
+      ///.select("key","value")
+
+
+    rawTopicMessageDF.printSchema()
+
+  //  rawTopicMessageDF.show(5)
+
+   var console = rawTopicMessageDF.writeStream
+                     .outputMode("append")
+                     .format("console")
+                     .option("truncate", false)
+                     .start()
+
+    console.awaitTermination()
 
 
 
-    val preferredHosts = LocationStrategies.PreferConsistent
-    val topics = List("backblaze_smart")
-    import org.apache.kafka.common.serialization.StringDeserializer
-    val kafkaParams = Map(
-      "bootstrap.servers" -> "localhost:9092",
-      "key.deserializer" -> classOf[StringDeserializer],
-      "value.deserializer" -> classOf[StringDeserializer],
-      "group.id" -> "spark-streaming-notesff2",
-      "auto.offset.reset" -> "earliest"
-    )
 
-    // val offsets = Map(new TopicPartition("backblaze_smart", 0) -> 2L)
 
-    val dstream = KafkaUtils.createDirectStream[String, String](
-      ssc,
-      preferredHosts,
-      ConsumerStrategies.Subscribe[String, String](topics, kafkaParams))
+    //instantiate the SerDe classes if not already, then deserialize!
+  /*  val deserializedTopicMessageDS = rawTopicMessageDF.map {
+      row =>
 
-    /*dstream.foreachRDD { rdd =>
-      // Get the offset ranges in the RDD
-      val offsetRanges = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
-      for (o <- offsetRanges) {
-        println(s"${o.topic} ${o.partition} offsets: ${o.fromOffset} to ${o.untilOffset}")
-      }
+        if (keyDeserializer == null) {
+          keyDeserializer = new KafkaAvroDeserializer
+          keyDeserializer.configure(props.asJava, true) //isKey = true
+        }
+
+        if (valueDeserializer == null) {
+          valueDeserializer = new KafkaAvroDeserializer
+          valueDeserializer.configure(props.asJava, false) //isKey = false
+        }
+
+      //Pass the Avro schema.
+      val deserializedKeyString = keyDeserializer.deserialize(topicName, row.key, keySchema).toString //topic name is actually unused in the source code, just required by the signature. Weird right?
+      val deserializedValueJsonString = valueDeserializer.deserialize(topicName, row.value, topicValueAvroSchema).toString
+
+
+
+
     }*/
 
-    dstream.map(item => item.value()).foreachRDD(rrd => rrd.saveAsTextFile("out/test.txt"))
-
-    ssc.start
-
-    // the above code is printing out topic details every 5 seconds
-    // until you stop it.
-
-  //  ssc.stop(stopSparkContext = false)
-
-
-  }
+}
 
 }

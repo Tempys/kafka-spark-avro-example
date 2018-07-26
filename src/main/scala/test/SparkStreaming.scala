@@ -15,7 +15,10 @@ import org.spark_project.guava.eventbus.Subscribe
 // and then run the spark streaming job
 // the auto commit is false and configured to read from the `earliest`
 object SparkStreaming {
+
+
   def main(args: Array[String]): Unit = {
+
     val kafkaParameters = Map[String, Object](
       "bootstrap.servers" -> "127.0.0.1:9092",
       "key.deserializer" -> classOf[StringDeserializer],

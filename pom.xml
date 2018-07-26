@@ -40,11 +40,11 @@
       <version>${confluent.version}</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/io.confluent.kafka/connect-assemblies -->
-    <dependency>
+  <!--  <dependency>
       <groupId>io.confluent</groupId>
       <artifactId>kafka-schema-registry-client</artifactId>
       <version>4.1.1</version>
-    </dependency>
+    </dependency>-->
 
     <dependency>
       <groupId>org.apache.avro</groupId>
@@ -64,6 +64,13 @@
       <artifactId>spark-sql_2.11</artifactId>
       <version>2.3.1</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.spark/spark-sql-kafka-0-10 -->
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-sql-kafka-0-10_2.11</artifactId>
+      <version>2.3.1</version>
+
+    </dependency>
 
 
     <dependency>
@@ -71,11 +78,19 @@
       <artifactId>memsql-connector_2.11</artifactId>
       <version>2.0.5</version>
     </dependency>
-<!--        <dependency>
-          <groupId>org.apache.kafka</groupId>
-          <artifactId>kafka_2.10</artifactId>
-          <version>0.8.2.1</version>
-        </dependency>-->
+
+    <!-- https://mvnrepository.com/artifact/za.co.absa/abris -->
+   <!-- <dependency>
+      <groupId>za.co.absa</groupId>
+      <artifactId>abris</artifactId>
+      <version>1.0.0</version>
+    </dependency>-->
+
+    <!--        <dependency>
+              <groupId>org.apache.kafka</groupId>
+              <artifactId>kafka_2.10</artifactId>
+              <version>0.8.2.1</version>
+            </dependency>-->
        <!-- <dependency>
           <groupId>org.scala-lang</groupId>
           <artifactId>scala-library</artifactId>

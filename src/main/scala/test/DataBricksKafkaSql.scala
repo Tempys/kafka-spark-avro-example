@@ -16,6 +16,8 @@ object DataBricksKafkaSql {
       .load()
 
 
+
+
   /*  ds1.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)")
       .as[(String, String)]
 */
