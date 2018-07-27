@@ -1,6 +1,7 @@
 package test
 
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
+import org.apache.spark.sql.{Row, SparkSession}
 import za.co.absa.abris.avro.read.confluent.SchemaManager
 import za.co.absa.abris.avro.schemas.policy.SchemaRetentionPolicies.RETAIN_SELECTED_COLUMN_ONLY
 
@@ -29,8 +30,15 @@ object Test1 {
       .option("subscribe", "sea_vessel_position_reports")
       .fromConfluentAvro("value", None, Some(schemaRegistryConfs))(RETAIN_SELECTED_COLUMN_ONLY) // invoke the library passing over parameters to access the Schema Registry
 
+
+
     stream
-      .writeStream.format("console").start().awaitTermination()
+          .write
+          .format("com.memsql.spark.connector")
+          .mode("error")
+          .save("people.students")
+
+
 
 
   }
