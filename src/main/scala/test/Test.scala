@@ -4,22 +4,24 @@ import io.confluent.kafka.schemaregistry.client.rest.RestService
 import io.confluent.kafka.serializers.KafkaAvroDeserializer
 import org.apache.avro.Schema
 import org.apache.spark
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{Dataset, SparkSession}
 import org.apache.spark.sql.execution.streaming.FileStreamSource.Timestamp
 
 import collection.JavaConverters._
-
+import com.databricks.spark.avro._
 
 
 object Test {
 
-  case class KafkaMessage(key: Array[Byte], value: Array[Byte],topic: String, partition: String, offset: Long, timestamp: Timestamp)
+  case class KafkaMessage(key: String, value: Array[Byte],topic: String, partition: String, offset: Long, timestamp: Timestamp)
 
   def main(args: Array[String]): Unit = {
 
     val schemaRegistryURL = "http://127.0.0.1:8081"
     val topicName = "sea_vessel_position_reports"
     val subjectValueName = topicName + "-value"
+
+
 
     //create RestService object
 
@@ -49,6 +51,16 @@ object Test {
 
     import sql.implicits._
 
+
+    def  transform(value: Array[Byte]):String =  {
+      if (valueDeserializer == null) {
+        val  valueDeserializer = new KafkaAvroDeserializer
+        valueDeserializer.configure(props.asJava, false) //isKey = false
+      }
+
+      valueDeserializer.deserialize(topicName, value, topicValueAvroSchema).toString
+    }
+
     //Create structured streaming DF to read from the topic.
     val rawTopicMessageDF = sql.readStream
                                .format("kafka")
@@ -58,11 +70,13 @@ object Test {
                                //.option("maxOffsetsPerTrigger", 20)  //remove for prod
                                .load()
                                .as[KafkaMessage]
+                               .map(row => row.value)
 
-      ///.select("key","value")
 
 
-    rawTopicMessageDF.printSchema()
+
+
+   // rawTopicMessageDF.printSchema()
 
   //  rawTopicMessageDF.show(5)
 
@@ -102,5 +116,16 @@ object Test {
     }*/
 
 }
+
+ /* def decodeMessages(iter: Iterator[KafkaMessage], schemaRegistryUrl: String) : Iterator[<YourObject>] = {
+    val decoder = AvroTo<YourObject>Decoder.getDecoder(schemaRegistryUrl)
+    iter.map(message => {
+      val record = decoder.fromBytes(message.value).asInstanceOf[GenericData.Record]
+      val field1 = record.get("field1Name").asInstanceOf[GenericData.Record]
+      val field2 = record.get("field1Name").asInstanceOf[GenericData.String]
+      ...
+      //create an object with the fields extracted from genericRecord
+    })
+  }*/
 
 }

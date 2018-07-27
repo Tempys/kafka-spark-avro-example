@@ -52,6 +52,14 @@
       <version>${avro.version}</version>
     </dependency>
 
+    <!-- https://mvnrepository.com/artifact/com.databricks/spark-avro -->
+    <dependency>
+      <groupId>com.databricks</groupId>
+      <artifactId>spark-avro_2.11</artifactId>
+      <version>4.0.0</version>
+    </dependency>
+
+
     <dependency>
       <groupId>com.databricks</groupId>
       <artifactId>spark-avro_2.11</artifactId>
@@ -71,8 +79,12 @@
       <version>2.3.1</version>
 
     </dependency>
-
-
+  <!--  <dependency>
+      <groupId>za.co.absa</groupId>
+      <artifactId>abris</artifactId>
+      <version>2.0.0</version>
+    </dependency>
+-->
     <dependency>
       <groupId>com.memsql</groupId>
       <artifactId>memsql-connector_2.11</artifactId>
