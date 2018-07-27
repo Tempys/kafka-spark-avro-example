@@ -23,20 +23,22 @@ object Test1 {
     val spark = SparkSession.builder().master("local").getOrCreate()
 
     val stream = spark
-      .readStream
+      .read
       .format("kafka")
       .option("kafka.bootstrap.servers", "localhost:9092")
       .option("startingOffsets", "earliest")
       .option("subscribe", "sea_vessel_position_reports")
+      .load()
       .fromConfluentAvro("value", None, Some(schemaRegistryConfs))(RETAIN_SELECTED_COLUMN_ONLY) // invoke the library passing over parameters to access the Schema Registry
-
-
 
     stream
           .write
           .format("com.memsql.spark.connector")
           .mode("error")
           .save("people.students")
+
+/*    stream
+      .write.format("console").save()*/
 
 
 
