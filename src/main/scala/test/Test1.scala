@@ -1,5 +1,6 @@
 package test
 
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 import org.apache.spark.sql.{Row, SparkSession}
 import za.co.absa.abris.avro.read.confluent.SchemaManager
@@ -17,6 +18,18 @@ object Test1 {
       SchemaManager.PARAM_SCHEMA_REGISTRY_TOPIC -> "sea_vessel_position_reports",
       SchemaManager.PARAM_VALUE_SCHEMA_ID -> "3"
     )
+
+
+    var conf = new SparkConf()
+      .setAppName("Write to MemSQL Example")
+      .set("spark.memsql.host", "localhost")
+      .set("spark.memsql.port", "3306")
+      .set("spark.memsql.user", "root")
+      .set("spark.memsql.password", "pass")
+      .set("spark.memsql.defaultDatabase", "test")
+
+
+
 
     // import Spark Avro Dataframes
     import za.co.absa.abris.avro.AvroSerDe._
