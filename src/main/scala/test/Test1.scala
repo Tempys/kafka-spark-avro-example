@@ -29,8 +29,6 @@ object Test1 {
       .set("spark.memsql.defaultDatabase", "test")
 
 
-
-
     // import Spark Avro Dataframes
     import za.co.absa.abris.avro.AvroSerDe._
     val spark = SparkSession.builder().master("local").getOrCreate()
@@ -43,12 +41,10 @@ object Test1 {
       .option("subscribe", "sea_vessel_position_reports")
       .load()
       .fromConfluentAvro("value", None, Some(schemaRegistryConfs))(RETAIN_SELECTED_COLUMN_ONLY) // invoke the library passing over parameters to access the Schema Registry
-
-    stream
-          .write
-          .format("com.memsql.spark.connector")
-          .mode("error")
-          .save("people.students")
+      .write
+      .format("com.memsql.spark.connector")
+      .mode("error")
+      .save("people.students")
 
 /*    stream
       .write.format("console").save()*/
