@@ -8,6 +8,9 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 import test.KafkaSqlJoins.createschemaRegistryConfs
 import za.co.absa.abris.avro.schemas.policy.SchemaRetentionPolicies.RETAIN_SELECTED_COLUMN_ONLY
+import com.memsql.spark.connector._
+import com.memsql.spark.connector.util._
+import com.memsql.spark.connector.util.JDBCImplicits._
 
 object KafkaToMemSqlStream {
 
@@ -29,22 +32,19 @@ object KafkaToMemSqlStream {
     println("=============== start =======================")
 
     var conf = new SparkConf()
-        conf.set("es.index.auto.create", "true")
-        conf.set("es.nodes","192.168.99.100:9200")
-        conf.set("es.nodes.wan.only","true")
 
-     /* .setAppName("Write to MemSQL Example")
+
+      .setAppName("Write to MemSQL Example")
       .set("spark.memsql.host", "192.168.99.100")
-      .set("spark.memsql.port", "3306")
+      .set("spark.memsql.port", "32769")
       .set("spark.memsql.user", "root")
       .set("spark.memsql.password", "")
-      .set("spark.memsql.defaultDatabase", "kafka_sql")*/
+      .set("spark.memsql.defaultDatabase", "kafka_sql")
 
 
 
     // import Spark Avro Dataframes
     import za.co.absa.abris.avro.AvroSerDe._
-    import org.elasticsearch.spark.sql._
 
     val spark = SparkSession.builder()
                             .config(conf)
@@ -62,7 +62,7 @@ object KafkaToMemSqlStream {
                                     .load()
                                     .fromConfluentAvro("value", None, Some(createschemaRegistryConfs(schemaRegistryURL,topicNamefirst,valueRestResponseSchema)))(RETAIN_SELECTED_COLUMN_ONLY) // invoke the library passing over parameters to access the Schema Registry
                                     .toDF()
-                                    .saveToEs("spark/people")
+                                    .saveToMemSQL("kafka_sql.spark_test2")
 
     /*   streamFromFirstTopic
          .write
