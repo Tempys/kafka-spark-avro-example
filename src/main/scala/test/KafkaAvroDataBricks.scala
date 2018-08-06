@@ -38,6 +38,11 @@ object KafkaAvroDataBricks {
 
     var conf = new SparkConf()
       .setAppName("Write to MemSQL Example")
+
+      .set("spark.streaming.backpressure.enabled","true")
+      .set("spark.streaming.backpressure.initialRate","100")
+      .set("spark.streaming.backpressure.maxRatePerPartition","100")
+
       .set("spark.memsql.host", "192.168.99.100")
       .set("spark.memsql.port", "32771")
       .set("spark.memsql.user", "root")
@@ -59,24 +64,27 @@ object KafkaAvroDataBricks {
       .option("kafka.bootstrap.servers", s"$kafkaHost:9092")
       .option("startingOffsets", "earliest")
       .option("subscribe",topicNamefirst)
-       .load()
-     // .fromConfluentAvro("value", None, Some(createschemaRegistryConfs(schemaRegistryURL,topicNamefirst,valueRestResponseSchema)))(RETAIN_SELECTED_COLUMN_ONLY) // invoke the library passing over parameters to access the Schema Registry
-      .as[KafkaMessage]
-      .map(row => row.value)
-     // .toDF()
-      //.saveToMemSQL("test.test_table6")
+      .option("maxOffsetsPerTrigger",20)
+      .option("kafkaConsumer.pollTimeoutMs","1000")
+      .option("fetchOffset.retryIntervalMs","500")
+      // .load()
+      .fromConfluentAvro("value", None, Some(createschemaRegistryConfs(schemaRegistryURL,topicNamefirst,valueRestResponseSchema)))(RETAIN_SELECTED_COLUMN_ONLY) // invoke the library passing over parameters to access the Schema Registry
+     // .as[KafkaMessage]
+     // .map(row => row.value)
+     .toDF()
+      .saveToMemSQL("test.test_table7")
 
-    streamFromFirstTopic
+   /* streamFromFirstTopic
                        .write
                        .format("console")
-                       .save()
+                       .save()*/
 
 
-  /*  streamFromFirstTopic
+   /* streamFromFirstTopic
                        .write
       .format("com.memsql.spark.connector")
       .mode("error")
-      .option("insertBatchSize",100)
+      .option("insertBatchSize",20)
       .save("test.test2")*/
 
     //.select(from_avr
